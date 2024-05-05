@@ -4,7 +4,7 @@
   "description": "Week of March 28th, 2022 *** [LinkedIn](https://www.linkedin.com/in/eric-lantz/) | [Github](https://github.com/ericmlantz) *** ### **Table of Contents** 1. [Description](#description) 2. [Technology](#technology) 3. [Getting Started](#started) 4. [Screenshots](#screenshots) 5. [Future Updates](#updates) 6. [Credits](#updates) ***",
   "main": "index.js",
   "engines": {
-    "node": "17.5.0"
+    "node": ">=17.5.0"
   },
   "scripts": {
     "start": "node index.js",
@@ -29,6 +29,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.7.0",
     "morgan": "^1.10.0",
+    "node": "^17.5.0",
     "react-cookie": "^4.1.1",
     "uuid": "^8.3.2"
   },
@@ -36,6 +37,6 @@
     "react": "^17.0.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.18"
+    "nodemon": "^2.0.22"
   }
 }
