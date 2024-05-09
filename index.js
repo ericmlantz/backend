@@ -13,11 +13,9 @@ const app = express()
 
 app.use(cors())
 app.use(express.json())
-app.use(
-  express.urlencoded({
-    extended: true
-  })
-)
+app.use(express.urlencoded({
+  extended: true
+}));
 // app.use(express.static("public"));
 
 // const express = require('express')
@@ -44,7 +42,7 @@ app.post('/user/signup', async (req, res) => {
   console.log('password', password)
   const generatedUserId = uuidv4()
   console.log(generatedUserId)
-  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS)
+  const hashedPassword = await hash(password, SALT_ROUNDS)
 
   try {
     await client.connect()
@@ -66,7 +64,7 @@ app.post('/user/signup', async (req, res) => {
     const insertedUser = await users.insertOne(data)
 
     const token = jwt.sign(insertedUser, sanitizedEmail, {
-      expiresIn: 60 * 24
+      expiresIn: 60 * 24,
     })
 
     res.status(201).send({ token, userId: generatedUserId })
@@ -83,7 +81,7 @@ app.post('/restaurant/signup', async (req, res) => {
   const { email, password } = req.body
   const generatedRestaurantId = uuidv4()
   console.log(generatedRestaurantId)
-  const hashedPassword = await bcrypt.hash(password, 10)
+  const hashedPassword = await hash(password, 10)
 
   try {
     await client.connect()
@@ -105,7 +103,7 @@ app.post('/restaurant/signup', async (req, res) => {
     const insertedRestaurant = await restaurants.insertOne(data)
 
     const token = jwt.sign(insertedRestaurant, sanitizedEmail, {
-      expiresIn: 60 * 24
+      expiresIn: 60 * 24,
     })
 
     res.status(201).send({ token, restId: generatedRestaurantId })
@@ -128,13 +126,14 @@ app.post('/user/login', async (req, res) => {
 
     const user = await users.findOne({ email })
 
-    const correctPassword = await bcrypt.compare(password, user.hashed_password)
+    const correctPassword = await compare(password, user.hashed_password)
 
     if (user && correctPassword) {
-      const token = jwt.sign(user, email, {
-        expiresIn: 60 * 24
-      })
-      return res.status(201).send({ token, userId: user.user_id })
+      const token = jwt.sign(user, email,
+        {
+          expiresIn: 60 * 24
+        })
+      return res.status(201).send({token, userId: user.user_id})
     }
     res.status(400).send('Invalid Credentials')
   } catch (err) {
@@ -154,18 +153,17 @@ app.post('/restaurant/login', async (req, res) => {
     const database = client.db('app-data')
     const restaurants = database.collection('restaurants')
 
-    const restaurant = await restaurants.findOne({ email })
 
-    const correctPassword = await bcrypt.compare(
-      password,
-      restaurant.hashed_password
-    )
+    const restaurant = await restaurants.findOne({email})
+
+    const correctPassword = await bcrypt.compare(password, restaurant.hashed_password)
 
     if (restaurant && correctPassword) {
-      const token = jwt.sign(restaurant, email, {
-        expiresIn: 60 * 24
-      })
-      return res.status(201).send({ token, restId: restaurant.rest_id })
+      const token = jwt.sign(restaurant, email,
+        {
+          expiresIn: 60 * 24
+        })
+      return res.status(201).send({token, restId: restaurant.rest_id})
     }
     res.status(400).send('Invalid Credentials)')
   } catch (err) {
