@@ -1,21 +1,23 @@
-const PORT = process.env.PORT || 8000;
-const express = require("express");
-const cors = require('cors')
-const jwt = require('jsonwebtoken')
-const {v4: uuidv4} = require('uuid')
-const { MongoClient } = require("mongodb");
-const bcrypt = require('bcrypt')
+const PORT = process.env.PORT || 8000
+import express, { json, urlencoded } from 'express'
+import cors from 'cors'
+import { sign } from 'jsonwebtoken'
+import { v4 as uuidv4 } from 'uuid'
+import { MongoClient } from 'mongodb'
+import { hash, compare } from 'bcrypt'
 
 const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS)
 const uri = process.env.MONGODB_URI
 
-const app = express();
+const app = express()
 
 app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({
-  extended: true
-}));
+app.use(json())
+app.use(
+  urlencoded({
+    extended: true
+  })
+)
 // app.use(express.static("public"));
 
 // const express = require('express')
@@ -27,10 +29,7 @@ app.use(express.urlencoded({
 // const {restart} = require('nodemon')
 // require('dotenv').config()
 
-
-
 // const app = express()
-
 
 app.get('/', (req, res) => {
   res.json('Hello to my app')
@@ -40,20 +39,19 @@ app.get('/', (req, res) => {
 //User Post
 app.post('/user/signup', async (req, res) => {
   const client = new MongoClient(uri)
-  const {email, password} = req.body
-  console.log('email',email)
+  const { email, password } = req.body
+  console.log('email', email)
   console.log('password', password)
   const generatedUserId = uuidv4()
   console.log(generatedUserId)
-  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS)
+  const hashedPassword = await hash(password, SALT_ROUNDS)
 
   try {
     await client.connect()
     const database = client.db('app-data')
     const users = database.collection('users')
 
-    const existingUser = await users.findOne({email})
-
+    const existingUser = await users.findOne({ email })
 
     if (existingUser) {
       return res.status(409).send('User already exists. Please login')
@@ -67,11 +65,11 @@ app.post('/user/signup', async (req, res) => {
     }
     const insertedUser = await users.insertOne(data)
 
-    const token = jwt.sign(insertedUser, sanitizedEmail, {
-      expiresIn: 60 * 24,
+    const token = sign(insertedUser, sanitizedEmail, {
+      expiresIn: 60 * 24
     })
 
-    res.status(201).send({token, userId: generatedUserId})
+    res.status(201).send({ token, userId: generatedUserId })
   } catch (err) {
     console.log(err)
   } finally {
@@ -82,18 +80,17 @@ app.post('/user/signup', async (req, res) => {
 //Restaurant Post
 app.post('/restaurant/signup', async (req, res) => {
   const client = new MongoClient(uri)
-  const {email, password} = req.body
+  const { email, password } = req.body
   const generatedRestaurantId = uuidv4()
   console.log(generatedRestaurantId)
-  const hashedPassword = await bcrypt.hash(password, 10)
+  const hashedPassword = await hash(password, 10)
 
   try {
     await client.connect()
     const database = client.db('app-data')
     const restaurants = database.collection('restaurants')
 
-    const existingRestaurant = await restaurants.findOne({email})
-
+    const existingRestaurant = await restaurants.findOne({ email })
 
     if (existingRestaurant) {
       return res.status(409).send('Restaurant already exists. Please login')
@@ -107,11 +104,11 @@ app.post('/restaurant/signup', async (req, res) => {
     }
     const insertedRestaurant = await restaurants.insertOne(data)
 
-    const token = jwt.sign(insertedRestaurant, sanitizedEmail, {
-      expiresIn: 60 * 24,
+    const token = sign(insertedRestaurant, sanitizedEmail, {
+      expiresIn: 60 * 24
     })
 
-    res.status(201).send({token, restId: generatedRestaurantId})
+    res.status(201).send({ token, restId: generatedRestaurantId })
   } catch (err) {
     console.log(err)
   } finally {
@@ -122,23 +119,22 @@ app.post('/restaurant/signup', async (req, res) => {
 //Login User
 app.post('/user/login', async (req, res) => {
   const client = new MongoClient(uri)
-  const {email, password} = req.body
+  const { email, password } = req.body
 
   try {
     await client.connect()
     const database = client.db('app-data')
     const users = database.collection('users')
 
-    const user = await users.findOne({email})
+    const user = await users.findOne({ email })
 
-    const correctPassword = await bcrypt.compare(password, user.hashed_password)
+    const correctPassword = await compare(password, user.hashed_password)
 
     if (user && correctPassword) {
-      const token = jwt.sign(user, email,
-        {
-          expiresIn: 60 * 24
-        })
-      return res.status(201).send({token, userId: user.user_id})
+      const token = sign(user, email, {
+        expiresIn: 60 * 24
+      })
+      return res.status(201).send({ token, userId: user.user_id })
     }
     res.status(400).send('Invalid Credentials')
   } catch (err) {
@@ -151,24 +147,22 @@ app.post('/user/login', async (req, res) => {
 //Login Restaurant
 app.post('/restaurant/login', async (req, res) => {
   const client = new MongoClient(uri)
-  const {email, password} = req.body
+  const { email, password } = req.body
 
   try {
     await client.connect()
     const database = client.db('app-data')
     const restaurants = database.collection('restaurants')
 
+    const restaurant = await restaurants.findOne({ email })
 
-    const restaurant = await restaurants.findOne({email})
-
-    const correctPassword = await bcrypt.compare(password, restaurant.hashed_password)
+    const correctPassword = await compare(password, restaurant.hashed_password)
 
     if (restaurant && correctPassword) {
-      const token = jwt.sign(restaurant, email,
-        {
-          expiresIn: 60 * 24
-        })
-      return res.status(201).send({token, restId: restaurant.rest_id})
+      const token = sign(restaurant, email, {
+        expiresIn: 60 * 24
+      })
+      return res.status(201).send({ token, restId: restaurant.rest_id })
     }
     res.status(400).send('Invalid Credentials)')
   } catch (err) {
@@ -188,7 +182,7 @@ app.get('/user', async (req, res) => {
     const database = client.db('app-data')
     const users = database.collection('users')
 
-    const query = {user_id: userId}
+    const query = { user_id: userId }
     const user = await users.findOne(query)
     res.send(user)
   } finally {
@@ -206,7 +200,7 @@ app.get('/rest', async (req, res) => {
     const database = client.db('app-data')
     const restaurants = database.collection('restaurants')
 
-    const query = {rest_id: restId}
+    const query = { rest_id: restId }
     const restaurant = await restaurants.findOne(query)
     res.send(restaurant)
   } finally {
@@ -216,16 +210,16 @@ app.get('/rest', async (req, res) => {
 //Add Rest Matches
 app.put('/addrestmatch', async (req, res) => {
   const client = new MongoClient(uri)
-  const {userId, matchedRestaurantId} = req.body
+  const { userId, matchedRestaurantId } = req.body
 
   try {
     await client.connect()
     const database = client.db('app-data')
     const users = database.collection('users')
 
-    const query = {user_id: userId}
+    const query = { user_id: userId }
     const updateDocument = {
-      $push: {matches: {rest_id: matchedRestaurantId}},
+      $push: { matches: { rest_id: matchedRestaurantId } }
     }
     const user = await users.updateOne(query, updateDocument)
     res.send(user)
@@ -242,26 +236,23 @@ app.get('/rests', async (req, res) => {
     const database = client.db('app-data')
     const restaurants = database.collection('restaurants')
 
-    const pipeline =
-      [
-        {
-          '$match': {
-            'rest_id': {
-              '$in': restIds
-            }
+    const pipeline = [
+      {
+        $match: {
+          rest_id: {
+            $in: restIds
           }
         }
-      ]
+      }
+    ]
 
     const foundRestaurants = await restaurants.aggregate(pipeline).toArray()
 
     res.send(foundRestaurants)
-
   } finally {
     await client.close()
   }
 })
-
 
 //Get Zipcode Users
 app.get('/zipcodeusers', async (req, res) => {
@@ -272,7 +263,7 @@ app.get('/zipcodeusers', async (req, res) => {
     await client.connect()
     const database = client.db('app-data')
     const users = database.collection('users')
-    const query = {zipcode: {$eq: zipcode}}
+    const query = { zipcode: { $eq: zipcode } }
     const foundUsers = await users.find(query).toArray()
 
     res.send(foundUsers)
@@ -292,7 +283,7 @@ app.get('/zipcoderests', async (req, res) => {
     await client.connect()
     const database = client.db('app-data')
     const restaurants = database.collection('restaurants')
-    const query = {zipcode: {$eq: zipcode}}
+    const query = { zipcode: { $eq: zipcode } }
     const foundRestaurants = await restaurants.find(query).toArray()
 
     res.send(foundRestaurants)
@@ -342,7 +333,7 @@ app.put('/user', async (req, res) => {
     await client.connect()
     const database = client.db('app-data')
     const users = database.collection('users')
-    const query = {user_id: personFormData.user_id}
+    const query = { user_id: personFormData.user_id }
     const updateDocument = {
       $set: {
         first_name: personFormData.first_name,
@@ -352,7 +343,7 @@ app.put('/user', async (req, res) => {
         profile_photo: personFormData.profile_photo,
         zipcode: personFormData.zipcode,
         matches: personFormData.matches
-      },
+      }
     }
     const insertedUser = await users.updateOne(query, updateDocument)
     res.send(insertedUser)
@@ -370,7 +361,7 @@ app.put('/rest', async (req, res) => {
     await client.connect()
     const database = client.db('app-data')
     const restaurants = database.collection('restaurants')
-    const query = {rest_id: restaurantFormData.rest_id}
+    const query = { rest_id: restaurantFormData.rest_id }
     const updateDocument = {
       $set: {
         rest_name: restaurantFormData.rest_name,
@@ -386,9 +377,12 @@ app.put('/rest', async (req, res) => {
         rest_state: restaurantFormData.rest_state,
         zipcode: restaurantFormData.zipcode,
         matches: restaurantFormData.matches
-      },
+      }
     }
-    const insertedRestaurant = await restaurants.updateOne(query, updateDocument)
+    const insertedRestaurant = await restaurants.updateOne(
+      query,
+      updateDocument
+    )
     res.send(insertedRestaurant)
   } finally {
     await client.close()
@@ -397,17 +391,16 @@ app.put('/rest', async (req, res) => {
 
 app.put('/addusermatch', async (req, res) => {
   const client = new MongoClient(uri)
-  const {userId, matchedUserId} = req.body
+  const { userId, matchedUserId } = req.body
 
   try {
     await client.connect()
     const database = client.db('app-data')
     const users = database.collection('users')
 
-    const query = {user_id, userId}
+    const query = { user_id, userId }
     const updateDocument = {
-      $push: {matches: {user_id: matchedUserId}},
-
+      $push: { matches: { user_id: matchedUserId } }
     }
     const user = await users.updateOne(query, updateDocument)
     res.send(user)
@@ -418,16 +411,17 @@ app.put('/addusermatch', async (req, res) => {
 
 app.get('/messages', async (req, res) => {
   const client = new MongoClient(uri, { useUnifiedTopology: true })
-  const {userId, correspondingRestId} = req.query
+  const { userId, correspondingRestId } = req.query
   console.log(userId, correspondingRestId, 'correspondingRestId')
 
   try {
     await client.connect()
-    const database = client.db("app-data")
+    const database = client.db('app-data')
     const messages = database.collection('messages')
 
     const query = {
-      from_userId: userId, to_restId: correspondingRestId
+      from_userId: userId,
+      to_restId: correspondingRestId
     }
     const foundMessages = await messages.find(query).toArray()
     res.send(foundMessages)
@@ -442,7 +436,7 @@ app.post('/message', async (req, res) => {
 
   try {
     await client.connect()
-    const database = client.db("app-data")
+    const database = client.db('app-data')
     const messages = database.collection('messages')
     const insertedMessage = await messages.insertOne(message)
     res.send(insertedMessage)
@@ -451,4 +445,6 @@ app.post('/message', async (req, res) => {
   }
 })
 
-app.listen(process.env.PORT || 8000, () => console.log("Server running on PORT " + PORT))
+app.listen(process.env.PORT || 8000, () =>
+  console.log('Server running on PORT ' + PORT)
+)
