@@ -1,33 +1,25 @@
-const PORT = process.env.PORT || 8000
-const express = require('express')
-const cors = require('cors')
-const jwt = require('jsonwebtoken')
-const { v4: uuidv4 } = require('uuid')
-const { MongoClient } = require('mongodb')
-const bcrypt = require('bcrypt')
+import express, { json, urlencoded } from 'express'
+import cors from 'cors'
+import pkg from 'jsonwebtoken' // Import the default export from jsonwebtoken
+import { v4 as uuidv4 } from 'uuid'
+import pkgMongo from 'mongodb' // Import the default export from mongodb
+import { compare as _compare, hash } from 'bcrypt'
+import dotenv from 'dotenv'
 
-const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS)
+dotenv.config()
+
+const { sign } = pkg // Destructure sign from jsonwebtoken
+const { MongoClient } = pkgMongo // Destructure MongoClient from mongodb
+
+const PORT = process.env.PORT || 8000
+const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS, 10)
 const uri = process.env.MONGODB_URI
 
 const app = express()
 
 app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({
-  extended: true
-}));
-// app.use(express.static("public"));
-
-// const express = require('express')
-// const {MongoClient} = require('mongodb')
-// const {v4: uuid4} = require('uuid')
-// const bcrypt = require('bcrypt')
-// const jwt = require('jsonwebtoken')
-// const cors = require('cors')
-// const {restart} = require('nodemon')
-// require('dotenv').config()
-
-// const app = express()
+app.use(json())
+app.use(urlencoded({ extended: true }))
 
 app.get('/', (req, res) => {
   res.json('Hello to my app')
@@ -38,10 +30,7 @@ app.get('/', (req, res) => {
 app.post('/user/signup', async (req, res) => {
   const client = new MongoClient(uri)
   const { email, password } = req.body
-  console.log('email', email)
-  console.log('password', password)
   const generatedUserId = uuidv4()
-  console.log(generatedUserId)
   const hashedPassword = await hash(password, SALT_ROUNDS)
 
   try {
@@ -54,22 +43,24 @@ app.post('/user/signup', async (req, res) => {
     if (existingUser) {
       return res.status(409).send('User already exists. Please login')
     }
-    const sanitizedEmail = email.toLowerCase()
 
+    const sanitizedEmail = email.toLowerCase()
     const data = {
       user_id: generatedUserId,
       email: sanitizedEmail,
       hashed_password: hashedPassword
     }
+
     const insertedUser = await users.insertOne(data)
 
-    const token = jwt.sign(insertedUser, sanitizedEmail, {
-      expiresIn: 60 * 24,
+    const token = sign({ userId: generatedUserId }, sanitizedEmail, {
+      expiresIn: '24h'
     })
 
     res.status(201).send({ token, userId: generatedUserId })
   } catch (err) {
     console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
@@ -80,8 +71,7 @@ app.post('/restaurant/signup', async (req, res) => {
   const client = new MongoClient(uri)
   const { email, password } = req.body
   const generatedRestaurantId = uuidv4()
-  console.log(generatedRestaurantId)
-  const hashedPassword = await hash(password, 10)
+  const hashedPassword = await hash(password, SALT_ROUNDS)
 
   try {
     await client.connect()
@@ -93,22 +83,24 @@ app.post('/restaurant/signup', async (req, res) => {
     if (existingRestaurant) {
       return res.status(409).send('Restaurant already exists. Please login')
     }
-    const sanitizedEmail = email.toLowerCase()
 
+    const sanitizedEmail = email.toLowerCase()
     const data = {
       rest_id: generatedRestaurantId,
       email: sanitizedEmail,
       hashed_password: hashedPassword
     }
+
     const insertedRestaurant = await restaurants.insertOne(data)
 
-    const token = jwt.sign(insertedRestaurant, sanitizedEmail, {
-      expiresIn: 60 * 24,
+    const token = sign({ restId: generatedRestaurantId }, sanitizedEmail, {
+      expiresIn: '24h'
     })
 
     res.status(201).send({ token, restId: generatedRestaurantId })
   } catch (err) {
     console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
@@ -126,18 +118,23 @@ app.post('/user/login', async (req, res) => {
 
     const user = await users.findOne({ email })
 
-    const correctPassword = await compare(password, user.hashed_password)
-
-    if (user && correctPassword) {
-      const token = jwt.sign(user, email,
-        {
-          expiresIn: 60 * 24
-        })
-      return res.status(201).send({token, userId: user.user_id})
+    if (!user) {
+      return res.status(400).send('Invalid Credentials')
     }
+
+    const correctPassword = await _compare(password, user.hashed_password)
+
+    if (correctPassword) {
+      const token = sign({ userId: user.user_id }, email, {
+        expiresIn: '24h'
+      })
+      return res.status(201).send({ token, userId: user.user_id })
+    }
+
     res.status(400).send('Invalid Credentials')
   } catch (err) {
     console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
@@ -153,21 +150,25 @@ app.post('/restaurant/login', async (req, res) => {
     const database = client.db('app-data')
     const restaurants = database.collection('restaurants')
 
+    const restaurant = await restaurants.findOne({ email })
 
-    const restaurant = await restaurants.findOne({email})
-
-    const correctPassword = await bcrypt.compare(password, restaurant.hashed_password)
-
-    if (restaurant && correctPassword) {
-      const token = jwt.sign(restaurant, email,
-        {
-          expiresIn: 60 * 24
-        })
-      return res.status(201).send({token, restId: restaurant.rest_id})
+    if (!restaurant) {
+      return res.status(400).send('Invalid Credentials')
     }
-    res.status(400).send('Invalid Credentials)')
+
+    const correctPassword = await _compare(password, restaurant.hashed_password)
+
+    if (correctPassword) {
+      const token = sign({ restId: restaurant.rest_id }, email, {
+        expiresIn: '24h'
+      })
+      return res.status(201).send({ token, restId: restaurant.rest_id })
+    }
+
+    res.status(400).send('Invalid Credentials')
   } catch (err) {
     console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
@@ -186,12 +187,15 @@ app.get('/user', async (req, res) => {
     const query = { user_id: userId }
     const user = await users.findOne(query)
     res.send(user)
+  } catch (err) {
+    console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
 })
 
-//get One Restaurant
+//Get One Restaurant
 app.get('/rest', async (req, res) => {
   const client = new MongoClient(uri)
   const restId = req.query.restId
@@ -204,11 +208,15 @@ app.get('/rest', async (req, res) => {
     const query = { rest_id: restId }
     const restaurant = await restaurants.findOne(query)
     res.send(restaurant)
+  } catch (err) {
+    console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
 })
-//Add Rest Matches
+
+//Add Restaurant Matches
 app.put('/addrestmatch', async (req, res) => {
   const client = new MongoClient(uri)
   const { userId, matchedRestaurantId } = req.body
@@ -224,14 +232,19 @@ app.put('/addrestmatch', async (req, res) => {
     }
     const user = await users.updateOne(query, updateDocument)
     res.send(user)
+  } catch (err) {
+    console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
 })
+
 //Get Matched Restaurants
 app.get('/rests', async (req, res) => {
   const client = new MongoClient(uri)
   const restIds = JSON.parse(req.query.restIds)
+
   try {
     await client.connect()
     const database = client.db('app-data')
@@ -248,8 +261,10 @@ app.get('/rests', async (req, res) => {
     ]
 
     const foundRestaurants = await restaurants.aggregate(pipeline).toArray()
-
     res.send(foundRestaurants)
+  } catch (err) {
+    console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
@@ -266,8 +281,10 @@ app.get('/zipcodeusers', async (req, res) => {
     const users = database.collection('users')
     const query = { zipcode: { $eq: zipcode } }
     const foundUsers = await users.find(query).toArray()
-
     res.send(foundUsers)
+  } catch (err) {
+    console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
@@ -278,52 +295,58 @@ app.get('/zipcoderests', async (req, res) => {
   const client = new MongoClient(uri)
   const zipcode = req.query.zipcode
 
-  console.log(zipcode)
-
   try {
     await client.connect()
     const database = client.db('app-data')
     const restaurants = database.collection('restaurants')
     const query = { zipcode: { $eq: zipcode } }
     const foundRestaurants = await restaurants.find(query).toArray()
-
     res.send(foundRestaurants)
+  } catch (err) {
+    console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
 })
 
 //Get All Users
-app.get('/allusers', async (req, res) => {
+app.get('/users', async (req, res) => {
   const client = new MongoClient(uri)
 
   try {
     await client.connect()
     const database = client.db('app-data')
     const users = database.collection('users')
-
-    const returnedUsers = await users.find().toArray()
-    res.send(returnedUsers)
+    const allUsers = await users.find().toArray()
+    res.send(allUsers)
+  } catch (err) {
+    console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
 })
 
 //Get All Restaurants
-app.get('/allrests', async (req, res) => {
+app.get('/restaurants', async (req, res) => {
   const client = new MongoClient(uri)
 
   try {
     await client.connect()
     const database = client.db('app-data')
     const restaurants = database.collection('restaurants')
-
-    const returnedRestaurants = await restaurants.find().toArray()
-    res.send(returnedRestaurants)
+    const allRestaurants = await restaurants.find().toArray()
+    res.send(allRestaurants)
+  } catch (err) {
+    console.log(err)
+    res.status(500).send('Internal Server Error')
   } finally {
     await client.close()
   }
 })
+
+// Previous Code, line 349-471
 
 //Update Users
 app.put('/user', async (req, res) => {
@@ -446,6 +469,8 @@ app.post('/message', async (req, res) => {
   }
 })
 
-app.listen(process.env.PORT || 8000, () =>
+// ---------------
+
+app.listen(PORT, () => {
   console.log('Server running on PORT ' + PORT)
-)
+})
