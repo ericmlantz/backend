@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-dinrbackend-dev-7285e-authRole",
+      "UnauthRoleArn": "arn:aws:iam::827358270324:role/amplify-dinrbackend-dev-7285e-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::827358270324:role/amplify-dinrbackend-dev-7285e-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-dinrbackend-dev-7285e-deployment",
+      "UnauthRoleName": "amplify-dinrbackend-dev-7285e-unauthRole",
+      "StackName": "amplify-dinrbackend-dev-7285e",
+      "StackId": "arn:aws:cloudformation:us-east-1:827358270324:stack/amplify-dinrbackend-dev-7285e/37e529f0-5681-11ef-92a4-0eb3646ef60b",
+      "AmplifyAppId": "dvtrq1u149gjd"
+    },
+    "categories": {
+      "function": {
+        "dinrbackendfd053861": {}
+      }
+    }
+  }
+}
