@@ -14,7 +14,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 65002;
 const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS, 10);
-const uri = 'mongodb+srv://username:password@cluster0.mongodb.net/myDatabase';
+const uri = 'mongodb+srv://dinruser:tennis3@cluster0.8uknu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 // const uri = process.env.MONGODB_URI;
 
 const corsOptions = {
