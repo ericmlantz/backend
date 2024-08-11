@@ -23,7 +23,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
-app.use(json())
+app.use(express.json())
 app.use(urlencoded({ extended: true }))
 
 app.get('/', (req, res) => {
