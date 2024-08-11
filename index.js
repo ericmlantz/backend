@@ -6,27 +6,27 @@ import pkgMongo from 'mongodb' // Import the default export from mongodb
 import { compare as _compare, hash } from 'bcrypt'
 import dotenv from 'dotenv'
 
-dotenv.config()
-
 const { sign } = pkg // Destructure sign from jsonwebtoken
 const { MongoClient } = pkgMongo // Destructure MongoClient from mongodb
 
-const PORT = process.env.PORT || 65002
-const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS, 10)
-const uri = process.env.MONGODB_URI
+dotenv.config();
 
-const app = express()
-
-app.use(urlencoded({ extended: true }))
-app.use(json())
+const app = express();
+const PORT = process.env.PORT || 65002;
+const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS, 10);
+const uri = process.env.MONGODB_URI;
 
 const corsOptions = {
   origin: 'https://dinr.ericlan.tz',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // If you're using cookies or authentication headers
+  credentials: true,
 };
+
 app.use(cors(corsOptions));
+app.use(urlencoded({ extended: true }));
+app.use(json());
+
 
 app.get('/', (req, res) => {
   res.json('Hello to my app')
