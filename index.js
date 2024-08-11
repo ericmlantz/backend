@@ -476,6 +476,10 @@ app.post('/message', async (req, res) => {
   }
 })
 
+app.get('/test-cors', (req, res) => {
+  res.json({ message: 'CORS is working!' });
+});
+
 // ---------------
 
 app.listen(PORT, () => {
