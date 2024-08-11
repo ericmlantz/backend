@@ -14,7 +14,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 65002;
 const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS, 10);
-const uri = process.env.MONGODB_URI;
+const uri = 'mongodb+srv://username:password@cluster0.mongodb.net/myDatabase';
+// const uri = process.env.MONGODB_URI;
 
 const corsOptions = {
   origin: 'https://dinr.ericlan.tz',
