@@ -17,13 +17,13 @@ const uri = process.env.MONGODB_URI
 
 const app = express()
 
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-
-app.use(cors({
-  origin: frontendUrl, // Allow requests from this domain
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+const corsOptions = {
+  origin: 'https://dinr.ericlan.tz',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true, // If you're using cookies or authentication headers
+};
+app.use(cors(corsOptions));
 
 app.use(express.json())
 app.use(urlencoded({ extended: true }))
