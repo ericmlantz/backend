@@ -11,13 +11,18 @@ dotenv.config()
 const { sign } = pkg // Destructure sign from jsonwebtoken
 const { MongoClient } = pkgMongo // Destructure MongoClient from mongodb
 
-const PORT = process.env.PORT || 8000
+const PORT = process.env.PORT || 65002
 const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS, 10)
 const uri = process.env.MONGODB_URI
 
 const app = express()
 
-app.use(cors())
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+app.use(cors({
+  origin: frontendUrl,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+}));
 app.use(json())
 app.use(urlencoded({ extended: true }))
 
