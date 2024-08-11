@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid'
 import pkgMongo from 'mongodb' // Import the default export from mongodb
 import { compare as _compare, hash } from 'bcrypt'
 import dotenv from 'dotenv'
-import { MongoClient } from 'mongodb'
 
 dotenv.config()
 
