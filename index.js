@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid'
 import pkgMongo from 'mongodb' // Import the default export from mongodb
 import { compare as _compare, hash } from 'bcrypt'
 import dotenv from 'dotenv'
+import { MongoClient } from 'mongodb'
 
 dotenv.config()
 
@@ -20,10 +21,11 @@ const app = express()
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 app.use(cors({
-  origin: frontendUrl,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
+  origin: frontendUrl, // Allow requests from this domain
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json())
 app.use(urlencoded({ extended: true }))
 
