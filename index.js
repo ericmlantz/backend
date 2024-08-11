@@ -11,14 +11,14 @@ dotenv.config()
 const { sign } = pkg // Destructure sign from jsonwebtoken
 const { MongoClient } = pkgMongo // Destructure MongoClient from mongodb
 
-app.use(urlencoded({ extended: true }))
-app.use(json())
-
 const PORT = process.env.PORT || 65002
 const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS, 10)
 const uri = process.env.MONGODB_URI
 
 const app = express()
+
+app.use(urlencoded({ extended: true }))
+app.use(json())
 
 const corsOptions = {
   origin: 'https://dinr.ericlan.tz',
@@ -27,7 +27,6 @@ const corsOptions = {
   credentials: true, // If you're using cookies or authentication headers
 };
 app.use(cors(corsOptions));
-
 
 app.get('/', (req, res) => {
   res.json('Hello to my app')
