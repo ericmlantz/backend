@@ -18,7 +18,7 @@ const uri = 'mongodb+srv://dinruser:tennis3@cluster0.8uknu.mongodb.net/?retryWri
 // const uri = process.env.MONGODB_URI;
 
 const corsOptions = {
-  origin: 'https://dinr.ericlan.tz',
+  origin: 'https://dinr.ericlan.tz' || 'http://localhost:65002/',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
